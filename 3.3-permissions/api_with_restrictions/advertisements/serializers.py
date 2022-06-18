@@ -11,6 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'first_name',
                   'last_name',)
+        read_only_fields = ['user',]
 
 
 class AdvertisementSerializer(serializers.ModelSerializer):

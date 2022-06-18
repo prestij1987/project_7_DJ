@@ -13,12 +13,24 @@ class AdvertisementViewSet(ModelViewSet):
     """ViewSet для объявлений."""
 
 
+
+
     # TODO: настройте ViewSet, укажите атрибуты для кверисета,
     #   сериализаторов и фильтров
     queryset = Advertisement.objects.all()
     serializer_class = AdvertisementSerializer
+    permission_classes = [IsAuthenticated]
     # filter_backends = ()
     filterset_class = AdvertisementFilter
+# Создание обьявления
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+        id = self.context["request"].user.id
+        ads = Advertisement.objects.filter(creator_id=id)
+        if len(ads) >= 10:
+            raise serializers.ValidationError("Максимальное количество объявлений")
+
 
     def destroy(self, request, *args, **kwargs):
 
