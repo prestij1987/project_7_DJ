@@ -2,6 +2,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from advertisements.models import Advertisement
 from advertisements.serializers import AdvertisementSerializer
+from advertisements.permissions import IsOwnerOrReadOnly
 from advertisements.filters import AdvertisementFilter
 from rest_framework.response import Response
 from rest_framework import serializers
@@ -19,7 +20,7 @@ class AdvertisementViewSet(ModelViewSet):
     #   сериализаторов и фильтров
     queryset = Advertisement.objects.all()
     serializer_class = AdvertisementSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     # filter_backends = ()
     filterset_class = AdvertisementFilter
 # Создание обьявления
