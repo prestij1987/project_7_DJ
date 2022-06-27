@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from advertisements.models import Advertisement
 
@@ -11,7 +12,6 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'first_name',
                   'last_name',)
-        read_only_fields = ['user',]
 
 
 class AdvertisementSerializer(serializers.ModelSerializer):
@@ -29,21 +29,24 @@ class AdvertisementSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Метод для создания"""
 
-        # Простановка значения поля создатель по-умолчанию.
-        # Текущий пользователь является создателем объявления
-        # изменить или переопределить его через API нельзя.
-        # обратите внимание на `context` – он выставляется автоматически
-        # через методы ViewSet.
-        # само поле при этом объявляется как `read_only=True`
-        validated_data["creator"] = self.context["request"].user
+        creator = self.context["request"].user
+        validated_data["creator"] = creator
+
+        count_open = Advertisement.objects.filter(creator=creator, status='OPEN').count()
+
+        if count_open >= 10:
+            raise ValidationError({'detail': 'Too Many Open Advertisement (max count 10)'})
+
         return super().create(validated_data)
 
     def validate(self, data):
         """Метод для валидации. Вызывается при создании и обновлении."""
 
-        # TODO: добавьте требуемую валидацию
-        id = self.context["request"].user.id
-        ads = Advertisement.objects.filter(creator_id=id)
-        if len(ads) >= 10:
-            raise serializers.ValidationError("Максимальное количество объявлений")
+        creator = self.context["request"].user
+        count_open = Advertisement.objects.filter(creator=creator, status='OPEN').count()
+
+        if data.get('status', '') == 'OPEN':
+            if count_open >= 10:
+                raise ValidationError({'detail': 'Too Many Open Advertisement (max count 10)'})
+
         return data
